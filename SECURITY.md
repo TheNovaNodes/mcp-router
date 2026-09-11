@@ -8,7 +8,7 @@ TheNovaNodes Collective treats autonomous AI agent infrastructure security and o
 
 | Version | Supported          | Runtime    | Status             |
 | ------- | ------------------ | ---------- | ------------------ |
-| 1.0.x   | :white_check_mark: | Go 1.25+   | Production Current |
+| 1.0.x   | :white_check_mark: | Go 1.22-1.24   | Production Current |
 
 ---
 
