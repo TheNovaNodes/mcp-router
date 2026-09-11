@@ -1,8 +1,8 @@
 # 🛸 MCP Router (Unified Gateway)
 
-[![Go Version](https://img.shields.io/badge/go-1.25+-00ADD8.svg)](https://golang.org/)
+[![Go Version](https://img.shields.io/badge/go-1.22--1.24-00ADD8.svg)](https://golang.org/)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Protocol](https://img.shields.io/badge/protocol-MCP%20JSON--RPC-green.svg)](https://modelcontextprotocol.io/)
+[![Protocol](https://img.shields.io/badge/protocol-MCP%20JSON--RPC%2FSSE-green.svg)](https://modelcontextprotocol.io/)
 [![CI Status](https://img.shields.io/badge/CI-passing-brightgreen.svg)](https://github.com/TheNovaNodes/mcp-router/actions)
 [![Coverage](https://img.shields.io/badge/coverage-85.9%25-brightgreen.svg)](https://github.com/TheNovaNodes/mcp-router)
 
@@ -95,7 +95,7 @@ curl -i http://localhost:8090/health
 
 ### Option B: Build and Run from Source
 ```bash
-# Prerequisites: Go 1.25+
+# Prerequisites: Go 1.22-1.24
 go build -v -o mcp-router .
 
 # Launch gateway daemon

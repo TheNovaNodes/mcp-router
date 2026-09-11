@@ -1162,12 +1162,12 @@ func TestExtractBotFromPath(t *testing.T) {
 	}{
 		{
 			name:     "standard agent office path",
-			path:     "/home/user/.agents/kairos_brobot",
+			path:     "/opt/.agents/kairos_brobot",
 			expected: "kairos_brobot",
 		},
 		{
 			name:     "subdirectory inside agent office",
-			path:     "/home/user/.agents/kairos_brobot/scratch/downloads",
+			path:     "/opt/.agents/kairos_brobot/scratch/downloads",
 			expected: "kairos_brobot",
 		},
 		{
@@ -1177,7 +1177,7 @@ func TestExtractBotFromPath(t *testing.T) {
 		},
 		{
 			name:     "common agents dir should be rejected",
-			path:     "/home/user/.agents/common",
+			path:     "/opt/.agents/common",
 			expected: "",
 		},
 		{
@@ -1192,7 +1192,7 @@ func TestExtractBotFromPath(t *testing.T) {
 		},
 		{
 			name:     "another agent office",
-			path:     "/home/user/.agents/prometheus_brobot/.locks",
+			path:     "/opt/.agents/prometheus_brobot/.locks",
 			expected: "prometheus_brobot",
 		},
 	}

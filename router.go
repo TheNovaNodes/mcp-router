@@ -446,7 +446,7 @@ func extractResultErrorMessage(res *mcp.CallToolResult) string {
 var ssPIDRegex = regexp.MustCompile(`pid=(\d+)`)
 
 // extractBotFromPath extracts the bot identifier from an agent directory path.
-// It handles paths like "~/.agents/kairos_brobot", "/home/user/.agents/kairos_brobot/scratch",
+// It handles paths like "~/.agents/kairos_brobot", "/opt/.agents/kairos_brobot/scratch",
 // or relative ".agents/kairos_brobot".
 func extractBotFromPath(p string) string {
 	clean := filepath.Clean(strings.TrimSpace(p))

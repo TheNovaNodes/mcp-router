@@ -39,7 +39,7 @@ Both human engineers and autonomous AI agents are welcome to contribute under th
 ## 🛠️ Development Setup & Workflow
 
 ### 1. Prerequisites
-- **Go 1.25+**
+- **Go 1.22-1.24**
 - **Git**
 - **GitHub CLI (`gh`)** authenticated with proper organization scopes
 
