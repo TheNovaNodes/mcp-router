@@ -1,0 +1,14 @@
+.git
+.gitignore
+.gitattributes
+*.test
+*.out
+coverage.*
+audit.jsonl
+mcp-router
+.env
+.env.*
+*.key
+*.pem
+*.crt
+docs/

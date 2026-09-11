@@ -1,0 +1,256 @@
+# MCP Router Configuration Example
+# Copy to config.yaml and configure environment variables in your .env or system environment
+
+# audit:
+#   path: "/var/log/mcp-router/audit.jsonl"
+#   fallback_path: "./audit.jsonl"
+#   required: false
+
+auth:
+  enabled: true
+  bearer_token: "${MCP_ROUTER_BEARER_TOKEN}"
+  allow_query_token: true # Set true to allow ?token= auth for header-constrained SSE clients
+
+# tls:
+#   enabled: true
+#   cert_file: "/etc/mcp-router/certs/server.crt"
+#   key_file: "/etc/mcp-router/certs/server.key"
+
+# Each server MUST specify a unique 'prefix' ending with '_' or '__' (recommended pattern: '<server_name>__')
+# to isolate tool namespaces and prevent routing collisions across backends.
+servers:
+  # ============================================================================
+  # КЛАСТЕР 1. Общесистемный Базовый Стек (доступен всем 9 агентам)
+  # ============================================================================
+  nova-anythingllm-mcp:
+    # max_concurrent: 50
+    # timeout: 60
+    transport: stdio
+    command: /usr/local/bin/anythingllm-gateway
+    args: []
+    env:
+      MG_ALM_BASE: http://127.0.0.1:3002/api/v1
+      MG_API_KEY: ${MG_API_KEY}
+      MG_WORKSPACE: default
+    prefix: nova-anythingllm-mcp__
+    agent_tools_allowlist:
+      kairos_brobot:
+      - "search_memory"
+      - "get_document"
+
+  nova-searxng-gateway:
+    transport: stdio
+    command: /usr/local/bin/searxng-gateway
+    args: []
+    env:
+      SEARXNG_URL: http://127.0.0.1:8889
+    prefix: nova-searxng-gateway__
+    agent_tools_allowlist:
+      kairos_brobot:
+      - "search_web"
+      - "fetch_page"
+      - "deep_research"
+
+  context7-node-1:
+    transport: streamable_http
+    url: "https://mcp.context7.com/mcp"
+    headers:
+      Authorization: "Bearer ${CONTEXT7_TOKEN_1}"
+    prefix: "ctx7-node-1__"
+    agent_tools_allowlist:
+      kairos_brobot:
+      - "resolve-library-id"
+      - "query-docs"
+
+  # ============================================================================
+  # КЛАСТЕР 2. Персональный Офис ЗавЛаба (только kairos_brobot)
+  # ============================================================================
+  dynadot:
+    type: dynadot
+    # max_concurrent: 50
+    # timeout: 60
+    transport: stdio
+    command: /usr/bin/dynadot-mcp
+    args: []
+    env:
+      DYNADOT_API_KEY: ${DYNADOT_API_KEY}
+    prefix: "dynadot__"
+    allowed_agents:
+    - "kairos_brobot"
+    tools_allowlist:
+    - "search_domain"
+    - "get_domain_info"
+    - "list_domains"
+    - "register_domain"
+    - "renew_domain"
+    - "get_dns"
+    - "set_dns"
+    - "get_nameservers"
+    - "set_nameservers"
+    - "set_privacy"
+    - "lock_domain"
+    - "set_renew_option"
+    - "get_account_balance"
+    - "get_tld_price"
+    - "list_coupons"
+
+  mailru:
+    # max_concurrent: 50
+    # timeout: 60
+    transport: stdio
+    command: /usr/local/bin/mailru-mcp-server
+    args: []
+    env:
+      MAILRU_USERNAME: ${MAILRU_USERNAME}
+      MAILRU_APP_PASS: ${MAILRU_APP_PASS}
+    prefix: mailru__
+    allowed_agents:
+    - "kairos_brobot"
+    tools_allowlist:
+    - "mail_read_inbox"
+    - "mail_get_body"
+    - "mail_search_thread"
+    - "mail_send_draft"
+    - "mail_send_reply"
+    - "mail_send_with_attachment"
+    - "mail_move_message"
+    - "execute_pending_action"
+    - "dav_list_dir"
+    - "dav_download_file"
+    - "dav_upload_file"
+    - "dav_create_folder"
+    - "dav_delete_file"
+
+  nextcloud-gateway:
+    # max_concurrent: 50
+    # timeout: 60
+    transport: stdio
+    command: /usr/local/bin/nextcloud-mcp-gateway
+    args: []
+    env:
+      NC_URL: http://127.0.0.1:8080
+      NC_USER: admin
+      NC_APP_PASSWORD: ${NC_APP_PASSWORD}
+    prefix: nextcloud-gateway__
+    allowed_agents:
+    - "kairos_brobot"
+    tools_allowlist:
+    - "list_calendar_events"
+    - "create_calendar_event"
+    - "delete_calendar_event"
+    - "list_files"
+    - "read_file"
+    - "write_file"
+    - "create_folder"
+    - "delete_file"
+    - "execute_pending_action"
+
+  grizzly-sms:
+    # max_concurrent: 50
+    # timeout: 60
+    transport: stdio
+    command: node
+    args:
+    - /usr/local/share/grizzly-sms-mcp/dist/index.js
+    env:
+      GRIZZLY_SMS_API_KEY: ${GRIZZLY_SMS_API_KEY}
+      GRIZZLY_SMS_BASE_URL: https://api.grizzlysms.com
+    prefix: grizzly__
+    allowed_agents:
+    - "kairos_brobot"
+    tools_allowlist:
+    - "get_balance"
+    - "get_wallet"
+    - "request_number"
+    - "get_status"
+    - "set_status"
+
+  # ============================================================================
+  # КЛАСТЕР 3. R&D Control Plane (только toomynamea_brobot)
+  # ============================================================================
+  # nova-searxng-control: decommissioned (retired in favor of direct terminal ops)
+
+
+  # ============================================================================
+  # КЛАСТЕР 4. Разделение GitHub (строго по организациям)
+  # ============================================================================
+  github-doctormes:
+    type: github
+    transport: stdio
+    command: npx
+    args:
+    - -y
+    - "@modelcontextprotocol/server-github"
+    env:
+      GITHUB_PERSONAL_ACCESS_TOKEN: ${GITHUB_PAT_DOCTORMES}
+    prefix: gh-doctormes__
+    allowed_agents:
+    - "Caduceus_brobot"
+    - "Dartanyan_brobot"
+    - "Marla_Singer_gobot"
+
+  github-novanodes:
+    type: github
+    transport: stdio
+    command: npx
+    args:
+    - -y
+    - "@modelcontextprotocol/server-github"
+    env:
+      GITHUB_PERSONAL_ACCESS_TOKEN: ${GITHUB_PAT_NOVANODES}
+    prefix: gh-novanodes__
+    allowed_agents:
+    - "toomynamea_brobot"
+    - "prometheus_brobot"
+    - "NovaNodes_brobot"
+    - "trickster_gobot"
+    - "kairos_brobot"
+    - "Tyler_Durden_gobot"
+    - "bahus"
+    - "main"
+    agent_tools_allowlist:
+      kairos_brobot:
+      - "get_file_contents"
+      - "create_branch"
+      - "create_or_update_file"
+      - "search_repositories"
+      - "search_code"
+      - "list_issues"
+      - "get_issue"
+      - "create_issue"
+      - "add_issue_comment"
+      - "create_pull_request"
+      - "get_pull_request"
+      - "get_pull_request_status"
+
+  # ============================================================================
+  # КЛАСТЕР 5. Карантинный Полигон Экспериментов Google (только Tyler_Durden_gobot)
+  # ============================================================================
+  google-stitch-node-1:
+    transport: streamable_http
+    url: "https://stitch.googleapis.com/mcp"
+    headers:
+      X-Goog-Api-Key: "${GOOGLE_STITCH_TOKEN_1}"
+    prefix: "stitch-node-1__"
+    allowed_agents:
+    - "Tyler_Durden_gobot"
+
+  google-jules-novanodes:
+    transport: stdio
+    command: /usr/local/bin/google-jules-mcp
+    args: []
+    env:
+      JULES_API_KEY: ${JULES_API_KEY_NOVANODES}
+    prefix: google-jules-novanodes__
+    allowed_agents:
+    - "Tyler_Durden_gobot"
+
+  google-jules-doctormes:
+    transport: stdio
+    command: /usr/local/bin/google-jules-mcp
+    args: []
+    env:
+      JULES_API_KEY: ${JULES_API_KEY_DOCTORMES}
+    prefix: google-jules-doctormes__
+    allowed_agents:
+    - "Tyler_Durden_gobot"

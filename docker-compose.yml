@@ -1,0 +1,15 @@
+services:
+  mcp-router:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mcp-router
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    environment:
+      - PORT=:8090
+      - MCP_ROUTER_BEARER_TOKEN=${MCP_ROUTER_BEARER_TOKEN:-change-me-in-production}
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+    command: ["-config", "/app/config.yaml"]

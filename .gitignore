@@ -1,0 +1,44 @@
+# Binaries
+/mcp-router
+bin/
+dist/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Test artifacts
+*.test
+*.out
+coverage.out
+coverage.html
+profile.pprof
+
+# Logs
+*.log
+audit.jsonl
+
+# Environment & local configurations
+.env
+.env.*
+!.env.example
+config.yaml
+!config.example.yaml
+*.key
+*.pem
+*.crt
+
+# IDE & OS artifacts
+.idea/
+.vscode/
+*.swp
+*~
+.DS_Store
+
+# Node
+node_modules/
+
+# Windows
+Thumbs.db
+*.bundle
