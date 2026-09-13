@@ -272,8 +272,3 @@ servers:
     - "toomynamea_brobot"
     - "Tyler_Durden_gobot"
     - "NovaNodes_brobot"
-    - "prometheus_brobot"
-    - "Marla_Singer_gobot"
-    - "Caduceus_brobot"
-    - "Dartanyan_brobot"
-    - "main"
