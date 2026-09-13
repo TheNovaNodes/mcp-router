@@ -254,3 +254,21 @@ servers:
     prefix: google-jules-doctormes__
     allowed_agents:
     - "Tyler_Durden_gobot"
+
+  # ============================================================================
+  # КЛАСТЕР 6. Облачный Аутсорсинг (Manus AI Cloud Swarm)
+  # ============================================================================
+  manus-gateway:
+    transport: stdio
+    command: /root/projects/TheNovaNodes/manus-mcp-gateway/bin/manus-mcp-gateway
+    args: []
+    env:
+      MANUS_KEYS_FILE: /root/projects/TheNovaNodes/manus-mcp-gateway/.env
+      MANUS_DEFAULT_PROFILE: max
+    prefix: manus__
+    allowed_agents:
+    - "trickster_gobot"
+    - "kairos_brobot"
+    - "toomynamea_brobot"
+    - "Tyler_Durden_gobot"
+    - "NovaNodes_brobot"

@@ -497,6 +497,7 @@ func TestCanonicalConfig_CleanEcosystemBackends(t *testing.T) {
 		"context7-node-1",
 		"google-stitch-node-1",
 		"grizzly-sms",
+		"manus-gateway",
 	}
 
 	for _, cfgFile := range configs {
@@ -579,9 +580,12 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		t.Errorf("expected prometheus_brobot to NOT have access to github-doctormes")
 	}
 
-	// 3. Kairos gets exactly 8 backends: 3 base + 4 office + github-novanodes
-	if count := countAllowedBackends("kairos_brobot"); count != 8 {
-		t.Errorf("expected kairos_brobot to have access to 8 backends, got %d", count)
+	// 3. Kairos gets exactly 9 backends: 3 base + 4 office + github-novanodes + manus-gateway
+	if count := countAllowedBackends("kairos_brobot"); count != 9 {
+		t.Errorf("expected kairos_brobot to have access to 9 backends, got %d", count)
+	}
+	if !isAllowed("manus-gateway", "kairos_brobot") {
+		t.Errorf("expected kairos_brobot to have access to manus-gateway")
 	}
 	officeBackends := []string{"dynadot", "mailru", "nextcloud-gateway", "grizzly-sms"}
 	for _, b := range officeBackends {
@@ -607,9 +611,12 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		}
 	}
 
-	// 5. Tyler gets 7 backends: 3 base + github-novanodes + 3 quarantine (stitch, jules-novanodes, jules-doctormes)
-	if count := countAllowedBackends("Tyler_Durden_gobot"); count != 7 {
-		t.Errorf("expected Tyler_Durden_gobot to have access to 7 backends, got %d", count)
+	// 5. Tyler gets 8 backends: 3 base + github-novanodes + 3 quarantine (stitch, jules-novanodes, jules-doctormes) + manus-gateway
+	if count := countAllowedBackends("Tyler_Durden_gobot"); count != 8 {
+		t.Errorf("expected Tyler_Durden_gobot to have access to 8 backends, got %d", count)
+	}
+	if !isAllowed("manus-gateway", "Tyler_Durden_gobot") {
+		t.Errorf("expected Tyler_Durden_gobot to have access to manus-gateway")
 	}
 	quarantineBackends := []string{"google-stitch-node-1", "google-jules-novanodes", "google-jules-doctormes"}
 	for _, b := range quarantineBackends {
@@ -618,6 +625,17 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		}
 		if isAllowed(b, "prometheus_brobot") {
 			t.Errorf("expected prometheus_brobot to NOT have access to quarantine backend %s", b)
+		}
+	}
+
+	// 6. Orchestration agents (trickster_gobot, toomynamea_brobot, NovaNodes_brobot): exactly 5 backends (3 base + github-novanodes + manus-gateway)
+	orchestrationAgents := []string{"trickster_gobot", "toomynamea_brobot", "NovaNodes_brobot"}
+	for _, agent := range orchestrationAgents {
+		if count := countAllowedBackends(agent); count != 5 {
+			t.Errorf("expected %s to have access to 5 backends, got %d", agent, count)
+		}
+		if !isAllowed("manus-gateway", agent) {
+			t.Errorf("expected %s to have access to manus-gateway", agent)
 		}
 	}
 
