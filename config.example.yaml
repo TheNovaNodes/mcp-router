@@ -267,8 +267,33 @@ servers:
       MANUS_DEFAULT_PROFILE: max
     prefix: manus__
     allowed_agents:
-    - "trickster_gobot"
-    - "kairos_brobot"
     - "toomynamea_brobot"
-    - "Tyler_Durden_gobot"
+    - "prometheus_brobot"
     - "NovaNodes_brobot"
+    - "kairos_brobot"
+    - "trickster_gobot"
+    - "Tyler_Durden_gobot"
+    - "Caduceus_brobot"
+    - "Dartanyan_brobot"
+    - "Marla_Singer_gobot"
+
+  # ============================================================================
+  # КЛАСТЕР 7. DevOps & Infrastructure Control Plane (только prometheus_brobot)
+  # ============================================================================
+  nova-devops-mcp:
+    transport: stdio
+    command: /usr/local/bin/nova-devops-mcp
+    args: []
+    env:
+      DEVOPS_DOCKER_SOCKET: /var/run/docker.sock
+      DEVOPS_LEDGER_DB: /root/projects/TheNovaNodes/ops/shared/anythingllm-sync/etl_ledger.sqlite
+    prefix: nova-devops-mcp__
+    allowed_agents:
+    - "prometheus_brobot"
+    tools_allowlist:
+    - "devops_get_host_ttx"
+    - "devops_check_services"
+    - "devops_inspect_containers"
+    - "devops_get_ledger_sync"
+    - "devops_manage_service"
+
