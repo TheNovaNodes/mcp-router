@@ -45,7 +45,7 @@ graph TD
         AUDIT["Zero-Noise Audit Logger<br/>(/var/log/mcp-router/audit.jsonl + SIGHUP Reopen)"]
     end
 
-    subgraph Backends["Multiplexed Backends (12 Active Services)"]
+    subgraph Backends["Multiplexed Backends (14 Active Services)"]
         ENV_GUARD["Secret Isolation Sandbox<br/>(Safe Baseline + Whitelisted Server Env)"]
         B1["AnythingLLM Gateway (stdio)"]
         B2["SearXNG Gateway (stdio)"]
@@ -56,6 +56,8 @@ graph TD
         B7["Google Jules AI Agents (stdio)"]
         B8["Context7 & Google Stitch (streamable_http)"]
         B9["Grizzly SMS (stdio)"]
+        B10["Manus AI Cloud Swarm (stdio)"]
+        B11["Nova DevOps MCP (stdio)"]
     end
 
     A1 & A2 & A3 -->|HTTP/SSE| AUTH
@@ -70,7 +72,7 @@ graph TD
     SEC_GUARD --> TIMEOUT
     TIMEOUT --> AUDIT
     AUDIT --> ENV_GUARD
-    ENV_GUARD --> B1 & B2 & B3 & B4 & B5 & B6 & B7 & B8 & B9
+    ENV_GUARD --> B1 & B2 & B3 & B4 & B5 & B6 & B7 & B8 & B9 & B10 & B11
 ```
 
 ---

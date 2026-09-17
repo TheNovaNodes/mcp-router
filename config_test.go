@@ -498,6 +498,7 @@ func TestCanonicalConfig_CleanEcosystemBackends(t *testing.T) {
 		"google-stitch-node-1",
 		"grizzly-sms",
 		"manus-gateway",
+		"nova-devops-mcp",
 	}
 
 	for _, cfgFile := range configs {
@@ -569,12 +570,18 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		}
 	}
 
-	// 2. Prometheus gets exactly 4 backends: 3 base + github-novanodes
-	if count := countAllowedBackends("prometheus_brobot"); count != 4 {
-		t.Errorf("expected prometheus_brobot to have access to 4 backends, got %d", count)
+	// 2. Prometheus gets exactly 6 backends: 3 base + github-novanodes + manus-gateway + nova-devops-mcp
+	if count := countAllowedBackends("prometheus_brobot"); count != 6 {
+		t.Errorf("expected prometheus_brobot to have access to 6 backends, got %d", count)
+	}
+	if !isAllowed("nova-devops-mcp", "prometheus_brobot") {
+		t.Errorf("expected prometheus_brobot to have access to nova-devops-mcp")
 	}
 	if !isAllowed("github-novanodes", "prometheus_brobot") {
 		t.Errorf("expected prometheus_brobot to have access to github-novanodes")
+	}
+	if !isAllowed("manus-gateway", "prometheus_brobot") {
+		t.Errorf("expected prometheus_brobot to have access to manus-gateway")
 	}
 	if isAllowed("github-doctormes", "prometheus_brobot") {
 		t.Errorf("expected prometheus_brobot to NOT have access to github-doctormes")
@@ -587,6 +594,9 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 	if !isAllowed("manus-gateway", "kairos_brobot") {
 		t.Errorf("expected kairos_brobot to have access to manus-gateway")
 	}
+	if isAllowed("nova-devops-mcp", "kairos_brobot") {
+		t.Errorf("expected kairos_brobot to NOT have access to nova-devops-mcp")
+	}
 	officeBackends := []string{"dynadot", "mailru", "nextcloud-gateway", "grizzly-sms"}
 	for _, b := range officeBackends {
 		if !isAllowed(b, "kairos_brobot") {
@@ -597,17 +607,23 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		}
 	}
 
-	// 4. Doctormes contour: exactly 4 backends (3 base + github-doctormes)
+	// 4. Doctormes contour: exactly 5 backends (3 base + github-doctormes + manus-gateway)
 	doctormesAgents := []string{"Caduceus_brobot", "Dartanyan_brobot", "Marla_Singer_gobot"}
 	for _, agent := range doctormesAgents {
-		if count := countAllowedBackends(agent); count != 4 {
-			t.Errorf("expected %s to have access to 4 backends, got %d", agent, count)
+		if count := countAllowedBackends(agent); count != 5 {
+			t.Errorf("expected %s to have access to 5 backends, got %d", agent, count)
+		}
+		if !isAllowed("manus-gateway", agent) {
+			t.Errorf("expected %s to have access to manus-gateway", agent)
 		}
 		if !isAllowed("github-doctormes", agent) {
 			t.Errorf("expected %s to have access to github-doctormes", agent)
 		}
 		if isAllowed("github-novanodes", agent) {
 			t.Errorf("expected %s to NOT have access to github-novanodes", agent)
+		}
+		if isAllowed("nova-devops-mcp", agent) {
+			t.Errorf("expected %s to NOT have access to nova-devops-mcp", agent)
 		}
 	}
 
@@ -617,6 +633,9 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 	}
 	if !isAllowed("manus-gateway", "Tyler_Durden_gobot") {
 		t.Errorf("expected Tyler_Durden_gobot to have access to manus-gateway")
+	}
+	if isAllowed("nova-devops-mcp", "Tyler_Durden_gobot") {
+		t.Errorf("expected Tyler_Durden_gobot to NOT have access to nova-devops-mcp")
 	}
 	quarantineBackends := []string{"google-stitch-node-1", "google-jules-novanodes", "google-jules-doctormes"}
 	for _, b := range quarantineBackends {
@@ -637,9 +656,12 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		if !isAllowed("manus-gateway", agent) {
 			t.Errorf("expected %s to have access to manus-gateway", agent)
 		}
+		if isAllowed("nova-devops-mcp", agent) {
+			t.Errorf("expected %s to NOT have access to nova-devops-mcp", agent)
+		}
 	}
 
-	// 6. OpenClaw agents (bahus, main): exactly 4 backends (3 base + github-novanodes)
+	// 7. OpenClaw agents (bahus, main): exactly 4 backends (3 base + github-novanodes)
 	openclawAgents := []string{"bahus", "main"}
 	for _, agent := range openclawAgents {
 		if count := countAllowedBackends(agent); count != 4 {
@@ -653,6 +675,9 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		}
 		if isAllowed("dynadot", agent) {
 			t.Errorf("expected %s to NOT have access to dynadot", agent)
+		}
+		if isAllowed("nova-devops-mcp", agent) {
+			t.Errorf("expected %s to NOT have access to nova-devops-mcp", agent)
 		}
 	}
 		})

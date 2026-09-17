@@ -38,7 +38,7 @@ flowchart TD
         AUDIT["Zero-Noise Audit Logger<br/>(/var/log/mcp-router/audit.jsonl)"]
     end
 
-    subgraph Backends["Multiplexed Backends (12 Active Services)"]
+    subgraph Backends["Multiplexed Backends (14 Active Services)"]
         subgraph C1["Cluster 1: Base Stack"]
             B_ALM["nova-anythingllm-mcp (stdio)"]
             B_SEARX["nova-searxng-gateway (stdio)"]
@@ -59,6 +59,12 @@ flowchart TD
             B_JULES_NOVA["google-jules-novanodes (stdio)"]
             B_JULES_DOC["google-jules-doctormes (stdio)"]
         end
+        subgraph C6["Cluster 6: Cloud Swarm"]
+            B_MANUS["manus-gateway (stdio)"]
+        end
+        subgraph C7["Cluster 7: DevOps & Infrastructure Control"]
+            B_DEVOPS["nova-devops-mcp (stdio)"]
+        end
     end
 
     Agents -->|HTTP / SSE| AUTH
@@ -72,7 +78,7 @@ flowchart TD
     OVERLOAD --> BRANCH_GUARD
     BRANCH_GUARD --> TIMEOUT
     TIMEOUT --> AUDIT
-    AUDIT --> C1 & C2 & C4 & C5
+    AUDIT --> C1 & C2 & C4 & C5 & C6 & C7
 ```
 
 ---
@@ -87,7 +93,7 @@ flowchart TD
 - **HTTP Endpoints:**
   - `GET /sse`: Establishes SSE stream connection for an agent session.
   - `POST /message`: Receives incoming JSON-RPC tool calls and requests.
-  - `GET /health`: Returns JSON health status of all 12 multiplexed backends.
+  - `GET /health`: Returns JSON health status of all 14 multiplexed backends.
   - `GET /metrics`: Exports Prometheus runtime and traffic counters.
 
 ### 2. Session Isolation & Batch Registration (`router.go`)
