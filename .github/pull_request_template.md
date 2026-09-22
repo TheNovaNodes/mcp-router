@@ -1,9 +1,36 @@
-### 📌 Description of Changes
+## 1. Контекст и Связь с Issue
+- [ ] **Связан с Issue:** Closes #___
+- [ ] **Автономный PR (Chore / Hotfix / Docs):** Обоснование ниже в секции «Зачем».
 
-<!-- Summarize the key changes, motivation, and context -->
+<!-- Если PR автономный (не привязан к открытому Issue), обязательно заполни это поле: -->
+### 💡 Зачем (только для автономных PR)
+> *Какую проблему, баг или сетевую задачу решает этот PR?*
 
-### 🛡️ Verification & Golden Loop
-- [ ] `go test -v -race ./...` passed (100% green)
-- [ ] `go build -v .` passed
-- [ ] No secrets or sensitive configuration committed
-- [ ] Documentation synchronized (`README.md`, `CHANGELOG.md`, `ARCHITECTURE.md`)
+---
+
+## 2. Что изменено (Diff Summary & Scope Guard)
+<!-- Краткий список измененных пакетов и файлов. Scope Guard: строго в рамках задачи! -->
+- 
+
+---
+
+## 3. Верификация и доказательства (Proof)
+<!-- Команды проверки, тесты, логи сборки -->
+- [ ] Юнит и интеграционные тесты пройдены (`go test -v -race ./...` -> 100% PASS)
+- [ ] Сборка демона успешна (`go build -v .`)
+- [ ] Линтер и статический анализ без ошибок (`golangci-lint run`)
+- **Команда ручной проверки / пруф:** `...`
+
+---
+
+## 4. Чеклист Чистоты Кода (Zero Dirty Hacks)
+- [ ] **Scope Isolation:** Отсутствуют посторонние правки форматирования или файлы вне скоупа.
+- [ ] **Code Hygiene:** Отсутствуют отладочные `fmt.Println`, `log.Println`, утечки памяти, гонки данных (`-race`) и секреты.
+- [ ] **Архитектурный инвариант:** Соблюдены слабая связность, потокобезопасность (`sync.RWMutex`) и спецификация MCP.
+- [ ] **Документация:** Синхронизированы `README.md`, `CHANGELOG.md`, `ARCHITECTURE.md` (при изменении контрактов).
+
+---
+
+## 5. Аудит и Приемка
+- **Аудитор:** Нова (Амбассадор) / ЗавЛаб
+- **Статус ревью:** [ ] Awaiting Audit / [ ] Changes Requested / [ ] Approved for Merge
