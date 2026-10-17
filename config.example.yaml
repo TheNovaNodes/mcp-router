@@ -287,6 +287,16 @@ servers:
     env:
       DEVOPS_DOCKER_SOCKET: /var/run/docker.sock
       DEVOPS_LEDGER_DB: /root/projects/TheNovaNodes/ops/shared/anythingllm-sync/etl_ledger.sqlite
+      DEVOPS_PL_HOST: 2.26.6.185
+      DEVOPS_PL_USER: root
+      DEVOPS_PL_PORT: 22
+      DEVOPS_NL_HOST: 177.3.223.112
+      DEVOPS_NL_USER: root
+      DEVOPS_NL_PORT: 22
+      DEVOPS_GPU_HOST: 100.121.80.121
+      DEVOPS_GPU_USER: WWC
+      DEVOPS_GPU_PORT: 22
+      DEVOPS_SSH_STRICT_HOST_KEY_CHECKING: "accept-new"
     prefix: nova-devops-mcp__
     allowed_agents:
     - "prometheus_brobot"
