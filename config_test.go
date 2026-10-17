@@ -483,6 +483,11 @@ func TestCanonicalConfig_CleanEcosystemBackends(t *testing.T) {
 		t.Skip("skipping private ecosystem backend test: config.yaml not present in open-source environment")
 	}
 
+	cfg, err := LoadConfig("config.yaml")
+	if err != nil {
+		t.Fatalf("failed to load config.yaml: %v", err)
+	}
+
 	expectedBackends := []string{
 		"nova-anythingllm-mcp",
 		"nova-searxng-gateway",
@@ -499,10 +504,8 @@ func TestCanonicalConfig_CleanEcosystemBackends(t *testing.T) {
 		"manus-gateway",
 		"nova-devops-mcp",
 	}
-
-	cfg, err := LoadConfig("config.yaml")
-	if err != nil {
-		t.Fatalf("failed to load config.yaml: %v", err)
+	if _, ok := cfg.Servers["nova-play2go-mcp"]; ok {
+		expectedBackends = append(expectedBackends, "nova-play2go-mcp")
 	}
 
 	if len(cfg.Servers) != len(expectedBackends) {
@@ -562,9 +565,13 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		}
 	}
 
-	// 2. Prometheus gets exactly 6 backends: 3 base + github-novanodes + manus-gateway + nova-devops-mcp
-	if count := countAllowedBackends("prometheus_brobot"); count != 6 {
-		t.Errorf("expected prometheus_brobot to have access to 6 backends, got %d", count)
+	// 2. Prometheus gets base + github-novanodes + manus-gateway + nova-devops-mcp (+ nova-play2go-mcp if present)
+	expectedPrometheusCount := 6
+	if _, ok := cfg.Servers["nova-play2go-mcp"]; ok && isAllowed("nova-play2go-mcp", "prometheus_brobot") {
+		expectedPrometheusCount++
+	}
+	if count := countAllowedBackends("prometheus_brobot"); count != expectedPrometheusCount {
+		t.Errorf("expected prometheus_brobot to have access to %d backends, got %d", expectedPrometheusCount, count)
 	}
 	if !isAllowed("nova-devops-mcp", "prometheus_brobot") {
 		t.Errorf("expected prometheus_brobot to have access to nova-devops-mcp")

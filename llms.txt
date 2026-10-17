@@ -1,0 +1,25 @@
+# TheNovaNodes MCP Router
+
+> High-performance Model Context Protocol (MCP) gateway, router, and security multiplexer written in Pure Go.
+
+The MCP Router serves as the central nervous system and tool multiplexer for autonomous agents, routing tool invocations across multiple downstream MCP servers (stdio, SSE, HTTP) with session-scoped access control, rate limiting, and security guardrails.
+
+## Architecture & Documents
+- [Architecture](ARCHITECTURE.md): Multi-tenant MCP multiplexer, session isolation, protocol bridging, and routing pipelines.
+- [Agents Contract](AGENTS.md): Core invariants, Golden Loop verification commands, zero-panic policy, and branch guards.
+- [Security Policy](SECURITY.md): Threat model, responsible disclosure, token validation, and guardrails.
+- [Contributing Guide](CONTRIBUTING.md): Git Flow rules, pre-commit checks, and PR lifecycle.
+
+## Core Implementation Files
+- `main.go`: Entry point, lifecycle management, graceful shutdown, and CLI flags.
+- `router.go`: Dynamic tool dispatch, prefix routing, allowlist enforcement, and agent authorization.
+- `multiplexer.go`: Downstream MCP server lifecycle management, stdio/SSE transports, and health checks.
+- `auth.go`: Bearer token validation, local peer resolution, and session management.
+- `config.go`: YAML configuration loader, environment substitution, and schema validation.
+- `health.go`: Liveness and readiness endpoints, backend ping, and diagnostic telemetry.
+- `logger.go`: Structured JSON logging and audit failsafe mechanisms.
+
+## Key APIs & Endpoints
+- `POST /mcp`: Primary JSON-RPC 2.0 MCP routing endpoint.
+- `GET /health`: Router liveness probe.
+- `GET /ready`: Router readiness probe with upstream backend verification.
