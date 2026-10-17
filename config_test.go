@@ -479,9 +479,8 @@ func TestLoadConfig_ProductionAndExampleFiles(t *testing.T) {
 
 func TestCanonicalConfig_CleanEcosystemBackends(t *testing.T) {
 	t.Setenv("MCP_ROUTER_BEARER_TOKEN", "ci-test-token")
-	configs := []string{"config.example.yaml"}
-	if _, err := os.Stat("config.yaml"); err == nil {
-		configs = append(configs, "config.yaml")
+	if _, err := os.Stat("config.yaml"); err != nil {
+		t.Skip("skipping private ecosystem backend test: config.yaml not present in open-source environment")
 	}
 
 	expectedBackends := []string{
@@ -501,39 +500,32 @@ func TestCanonicalConfig_CleanEcosystemBackends(t *testing.T) {
 		"nova-devops-mcp",
 	}
 
-	for _, cfgFile := range configs {
-		t.Run(cfgFile, func(t *testing.T) {
-			cfg, err := LoadConfig(cfgFile)
-			if err != nil {
-				t.Fatalf("failed to load %s: %v", cfgFile, err)
-			}
+	cfg, err := LoadConfig("config.yaml")
+	if err != nil {
+		t.Fatalf("failed to load config.yaml: %v", err)
+	}
 
-			if len(cfg.Servers) != len(expectedBackends) {
-				t.Errorf("expected exactly %d backends in %s, got %d", len(expectedBackends), cfgFile, len(cfg.Servers))
-			}
+	if len(cfg.Servers) != len(expectedBackends) {
+		t.Errorf("expected exactly %d backends in config.yaml, got %d", len(expectedBackends), len(cfg.Servers))
+	}
 
-			for _, expected := range expectedBackends {
-				if _, ok := cfg.Servers[expected]; !ok {
-					t.Errorf("expected backend '%s' not found in %s", expected, cfgFile)
-				}
-			}
-		})
+	for _, expected := range expectedBackends {
+		if _, ok := cfg.Servers[expected]; !ok {
+			t.Errorf("expected backend '%s' not found in config.yaml", expected)
+		}
 	}
 }
 
 func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 	t.Setenv("MCP_ROUTER_BEARER_TOKEN", "ci-test-token")
-	configs := []string{"config.example.yaml"}
-	if _, err := os.Stat("config.yaml"); err == nil {
-		configs = append(configs, "config.yaml")
+	if _, err := os.Stat("config.yaml"); err != nil {
+		t.Skip("skipping private ecosystem ACL matrix test: config.yaml not present in open-source environment")
 	}
 
-	for _, cfgFile := range configs {
-		t.Run(cfgFile, func(t *testing.T) {
-			cfg, err := LoadConfig(cfgFile)
-			if err != nil {
-				t.Fatalf("failed to load %s: %v", cfgFile, err)
-			}
+	cfg, err := LoadConfig("config.yaml")
+	if err != nil {
+		t.Fatalf("failed to load config.yaml: %v", err)
+	}
 
 	// Helper to check if an agent is allowed in a backend
 	isAllowed := func(backendName, agentID string) bool {
@@ -679,8 +671,6 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		if isAllowed("nova-devops-mcp", agent) {
 			t.Errorf("expected %s to NOT have access to nova-devops-mcp", agent)
 		}
-	}
-		})
 	}
 }
 
@@ -929,29 +919,70 @@ servers:
 
 func TestProductionConfig_AnythingLLMBaseURL(t *testing.T) {
 	t.Setenv("MCP_ROUTER_BEARER_TOKEN", "ci-test-token")
-	configs := []string{"config.example.yaml"}
-	if _, err := os.Stat("config.yaml"); err == nil {
-		configs = append(configs, "config.yaml")
+	if _, err := os.Stat("config.yaml"); err != nil {
+		t.Skip("skipping private AnythingLLM test: config.yaml not present in open-source environment")
 	}
-	for _, cfgFile := range configs {
-		t.Run(cfgFile, func(t *testing.T) {
-			cfg, err := LoadConfig(cfgFile)
-			if err != nil {
-				t.Fatalf("failed to load %s: %v", cfgFile, err)
-			}
-			server, ok := cfg.Servers["nova-anythingllm-mcp"]
-			if !ok {
-				t.Fatalf("nova-anythingllm-mcp not found in %s", cfgFile)
-			}
-			almBase, ok := server.Env["MG_ALM_BASE"]
-			if !ok {
-				t.Fatalf("MG_ALM_BASE not defined in %s for nova-anythingllm-mcp", cfgFile)
-			}
-			expected := "http://127.0.0.1:3002/api/v1"
-			if almBase != expected {
-				t.Errorf("expected MG_ALM_BASE to be %q in %s, got %q", expected, cfgFile, almBase)
-			}
-		})
+	cfg, err := LoadConfig("config.yaml")
+	if err != nil {
+		t.Fatalf("failed to load config.yaml: %v", err)
+	}
+	server, ok := cfg.Servers["nova-anythingllm-mcp"]
+	if !ok {
+		t.Fatalf("nova-anythingllm-mcp not found in config.yaml")
+	}
+	almBase, ok := server.Env["MG_ALM_BASE"]
+	if !ok {
+		t.Fatalf("MG_ALM_BASE not defined in config.yaml for nova-anythingllm-mcp")
+	}
+	expected := "http://127.0.0.1:3002/api/v1"
+	if almBase != expected {
+		t.Errorf("expected MG_ALM_BASE to be %q in config.yaml, got %q", expected, almBase)
+	}
+}
+
+func TestExampleConfig_VendorNeutralStructure(t *testing.T) {
+	t.Setenv("MCP_ROUTER_BEARER_TOKEN", "ci-test-token")
+	cfg, err := LoadConfig("config.example.yaml")
+	if err != nil {
+		t.Fatalf("failed to load config.example.yaml: %v", err)
+	}
+
+	// 1. Verify example backends
+	expectedBackends := []string{"postgres-db", "filesystem", "github", "remote-docs"}
+	if len(cfg.Servers) != len(expectedBackends) {
+		t.Errorf("expected exactly %d backends in config.example.yaml, got %d", len(expectedBackends), len(cfg.Servers))
+	}
+	for _, b := range expectedBackends {
+		if _, ok := cfg.Servers[b]; !ok {
+			t.Errorf("expected example backend %q not found in config.example.yaml", b)
+		}
+	}
+
+	// 2. Anti-leak audit: ensure no private IPs, host paths, or proprietary agents exist in config.example.yaml
+	rawBytes, err := os.ReadFile("config.example.yaml")
+	if err != nil {
+		t.Fatalf("failed to read raw config.example.yaml: %v", err)
+	}
+	raw := string(rawBytes)
+	forbiddenPatterns := []string{
+		"/root/",
+		"/home/",
+		"2.26.6.185",
+		"177.3.223.112",
+		"89.125.168.170",
+		"100.121.80.121",
+		"kairos_brobot",
+		"MataHari_gobot",
+		"prometheus_brobot",
+		"Tyler_Durden_gobot",
+		"nova-devops-mcp",
+		"grizzly-sms",
+		"mailru",
+	}
+	for _, pattern := range forbiddenPatterns {
+		if strings.Contains(raw, pattern) {
+			t.Errorf("anti-leak check failed: config.example.yaml contains private pattern %q", pattern)
+		}
 	}
 }
 
