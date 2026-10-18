@@ -4,7 +4,7 @@ go 1.25.5
 
 require (
 	github.com/google/uuid v1.6.0
-	github.com/mark3labs/mcp-go v0.58.0
+	github.com/mark3labs/mcp-go v1.3.0
 	github.com/prometheus/client_golang v1.24.1
 	gopkg.in/yaml.v3 v3.0.1
 )
