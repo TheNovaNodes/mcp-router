@@ -232,24 +232,112 @@ func CreateToolHandler(backendName string, mux *Multiplexer, origName string, ag
 			return mcp.NewToolResultError(reason), nil
 		}
 
-		// SECURITY GUARD (Issue #8): Enforce Branch Protection & PR Merge Ban for GitHub MCP backends
-		if backend.GetType() == "github" {
-			// 1. Block merging Pull Requests
-			if origName == "merge_pull_request" {
-				reason := "SECURITY POLICY VIOLATION: Agents are strictly prohibited from merging Pull Requests! Request human review from ZaVLab."
-				log.Printf("SECURITY GUARD BLOCKED: Agent %s attempted to merge PR via %s", targetAgentID, request.Params.Name)
+		// ====================================================================
+		// HARD HITL (Human-in-the-Loop) SECURITY GUARD: PR Merge & Service Deploy
+		// ====================================================================
+		isMergeAction := backend.GetType() == "github" && origName == "merge_pull_request"
+		isDeployAction := (backend.Name == "nova-devops-mcp" || strings.Contains(backend.Name, "devops")) &&
+			origName == "devops_manage_service" &&
+			argsMap != nil &&
+			(strings.EqualFold(fmt.Sprintf("%v", argsMap["action"]), "restart") ||
+				strings.EqualFold(fmt.Sprintf("%v", argsMap["action"]), "stop") ||
+				strings.EqualFold(fmt.Sprintf("%v", argsMap["action"]), "start"))
+
+		if !isDeployAction && strings.Contains(strings.ToLower(origName), "deploy") && !strings.Contains(strings.ToLower(origName), "get") && !strings.Contains(strings.ToLower(origName), "list") && !strings.Contains(strings.ToLower(origName), "check") {
+			isDeployAction = true
+		}
+
+		if isMergeAction || isDeployAction {
+			actionType := "PR_MERGE"
+			actionDesc := "Merge Pull Request into protected mainline"
+			if isDeployAction {
+				actionType = "DEPLOY_SERVICE"
+				actionDesc = fmt.Sprintf("Production Service Deployment/Mutation (%v on %v)", argsMap["action"], argsMap["name"])
+			}
+
+			// Check for explicit HITL approval and staged token
+			tokenVal := ""
+			if argsMap != nil {
+				if t, ok := argsMap["hitl_token"].(string); ok {
+					tokenVal = strings.TrimSpace(t)
+				}
+				if tokenVal == "" {
+					if t, ok := argsMap["token"].(string); ok {
+						tokenVal = strings.TrimSpace(t)
+					}
+				}
+			}
+
+			hitlApproved := false
+			if argsMap != nil {
+				if a, ok := argsMap["hitl_approved"].(bool); ok && a {
+					hitlApproved = true
+				}
+			}
+
+			if tokenVal != "" && hitlApproved {
+				// Validate and consume the token
+				stagedAct, err := defaultHITLManager.ValidateAndConsume(tokenVal, targetAgentID, origName)
+				if err != nil {
+					reason := fmt.Sprintf("HITL SECURITY BARRIER REJECTED: %v. Execution blocked.", err)
+					log.Printf("HITL GUARD INVALID TOKEN: Agent %s tried to execute %s with invalid token %s: %v", targetAgentID, origName, tokenVal, err)
+					LogAuditEvent(AuditEvent{
+						EventType: EventSecurityBlock,
+						AgentID:   targetAgentID,
+						Backend:   backend.Name,
+						Tool:      request.Params.Name,
+						Reason:    reason,
+						Arguments: argsMap,
+					})
+					return mcp.NewToolResultError(reason), nil
+				}
+
+				// Clean HITL metadata from forwarded arguments before dispatching to backend
+				cleanArgs := cloneArgsMap(argsMap)
+				request.Params.Arguments = cleanArgs
+
+				log.Printf("HITL GUARD AUTHORIZED: Agent %s successfully consumed token %s for %s (%s)", targetAgentID, tokenVal, origName, actionType)
+				LogAuditEvent(AuditEvent{
+					EventType: EventStateChange,
+					AgentID:   targetAgentID,
+					Backend:   backend.Name,
+					Tool:      request.Params.Name,
+					Reason:    fmt.Sprintf("HITL_AUTHORIZED: Token %s confirmed for %s", tokenVal, actionType),
+					Arguments: cleanArgs,
+				})
+				_ = stagedAct
+			} else {
+				// Stage the operation in memory and block autonomous execution
+				stagedToken := defaultHITLManager.Stage(targetAgentID, backend.Name, origName, actionType, argsMap)
+				reason := fmt.Sprintf("🛑 ACTION BLOCKED BY HARD HITL (Human-in-the-Loop) SECURITY GUARD\n\n"+
+					"• Critical Operation: %s [%s]\n"+
+					"• Target Tool: %s (backend: %s)\n"+
+					"• Requesting Agent: %s\n"+
+					"• Arguments: %+v\n\n"+
+					"Autonomous execution of Pull Request Merges and Production Service Deployments is strictly forbidden!\n"+
+					"Supreme Gate requires explicit sovereign review and authorization from ZaVLab.\n\n"+
+					"To execute this staged operation, obtain direct authorization from ZaVLab and retry with:\n"+
+					"  hitl_token: \"%s\"\n"+
+					"  hitl_approved: true\n\n"+
+					"Note: This token is valid for 15 minutes and can only be consumed once.",
+					actionDesc, actionType, request.Params.Name, backend.Name, targetAgentID, argsMap, stagedToken)
+
+				log.Printf("HITL GUARD BLOCKED: Agent %s attempted autonomous %s via %s (staged token: %s)", targetAgentID, actionType, request.Params.Name, stagedToken)
 				LogAuditEvent(AuditEvent{
 					EventType: EventSecurityBlock,
 					AgentID:   targetAgentID,
 					Backend:   backend.Name,
 					Tool:      request.Params.Name,
-					Reason:    reason,
+					Reason:    fmt.Sprintf("HITL_STAGED: %s blocked, token %s issued", actionType, stagedToken),
 					Arguments: argsMap,
 				})
 				return mcp.NewToolResultError(reason), nil
 			}
+		}
 
-			// 2. Block direct pushes / modifications to protected branches (main, master) across all branch/ref argument keys and recursive value tree
+		// SECURITY GUARD (Issue #8): Enforce Branch Protection for GitHub MCP backends
+		if backend.GetType() == "github" {
+			// Block direct pushes / modifications to protected branches (main, master) across all branch/ref argument keys and recursive value tree
 			if argsMap != nil {
 				dangerousTools := map[string]bool{
 					"push_files":                 true,
@@ -276,6 +364,7 @@ func CreateToolHandler(backendName string, mux *Multiplexer, origName string, ag
 				}
 			}
 		}
+
 
 		// Resilience Guard: Check if backend client is connected and healthy
 		if backend.Client == nil {

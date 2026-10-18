@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"regexp"
 	"strings"
 	"sync"
 	"testing"
@@ -263,6 +264,214 @@ func TestCreateToolHandler_SecurityGuard_PRMerge(t *testing.T) {
 		t.Errorf("expected security guard to block merge_pull_request")
 	}
 }
+
+func TestCreateToolHandler_HITL_Merge_TwoPhaseCommit(t *testing.T) {
+	var forwardedReq mcp.CallToolRequest
+	mockClient := &mockMCPClient{
+		callToolFunc: func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+			forwardedReq = request
+			return mcp.NewToolResultText("merged"), nil
+		},
+	}
+	b := &Backend{
+		Name: "github-novanodes",
+		Config: ServerConfig{
+			Type:   "github",
+			Prefix: "gh-novanodes__",
+		},
+		Client:    mockClient,
+		Semaphore: make(chan struct{}, 5),
+	}
+	mux := newTestMultiplexer(b)
+
+	handler := CreateToolHandler(b.Name, mux, "merge_pull_request", "LeonardoAuditor_bot")
+
+	// Step 1: Autonomous merge attempt without HITL token -> MUST be blocked
+	req1 := mcp.CallToolRequest{}
+	req1.Params.Name = "gh-novanodes__merge_pull_request"
+	req1.Params.Arguments = map[string]interface{}{
+		"pull_number": 100,
+	}
+
+	res1, err := handler(context.Background(), req1)
+	if err != nil {
+		t.Fatalf("unexpected handler error: %v", err)
+	}
+	if !res1.IsError {
+		t.Fatalf("expected autonomous merge to be blocked by HITL guard")
+	}
+
+	// Extract token from response text
+	textResult := extractResultErrorMessage(res1)
+	if !strings.Contains(textResult, "HITL (Human-in-the-Loop) SECURITY GUARD") {
+		t.Errorf("expected HITL guard notice, got: %s", textResult)
+	}
+	re := regexp.MustCompile(`hitl_token: "(hitl_[a-f0-9]+)"`)
+	matches := re.FindStringSubmatch(textResult)
+	if len(matches) < 2 {
+		t.Fatalf("failed to extract hitl_token from result: %s", textResult)
+	}
+	token := matches[1]
+
+	// Step 2: Retry with wrong/forged token -> MUST be rejected
+	req2 := mcp.CallToolRequest{}
+	req2.Params.Name = "gh-novanodes__merge_pull_request"
+	req2.Params.Arguments = map[string]interface{}{
+		"pull_number":   100,
+		"hitl_token":    "hitl_forgedtoken12345678",
+		"hitl_approved": true,
+	}
+	res2, err := handler(context.Background(), req2)
+	if err != nil {
+		t.Fatalf("unexpected handler error: %v", err)
+	}
+	if !res2.IsError {
+		t.Fatalf("expected forged token to be rejected")
+	}
+
+	// Step 3: Retry with valid token but hitl_approved=false -> MUST be blocked
+	req3 := mcp.CallToolRequest{}
+	req3.Params.Name = "gh-novanodes__merge_pull_request"
+	req3.Params.Arguments = map[string]interface{}{
+		"pull_number":   100,
+		"hitl_token":    token,
+		"hitl_approved": false,
+	}
+	res3, err := handler(context.Background(), req3)
+	if err != nil {
+		t.Fatalf("unexpected handler error: %v", err)
+	}
+	if !res3.IsError {
+		t.Fatalf("expected hitl_approved=false to be blocked")
+	}
+
+	// Step 4: Valid execution with valid token + hitl_approved=true -> MUST SUCCEED
+	req4 := mcp.CallToolRequest{}
+	req4.Params.Name = "gh-novanodes__merge_pull_request"
+	req4.Params.Arguments = map[string]interface{}{
+		"pull_number":   100,
+		"hitl_token":    token,
+		"hitl_approved": true,
+	}
+	res4, err := handler(context.Background(), req4)
+	if err != nil {
+		t.Fatalf("unexpected handler error: %v", err)
+	}
+	if res4.IsError {
+		t.Fatalf("expected authorized execution to succeed, got error: %s", extractResultErrorMessage(res4))
+	}
+
+	// Verify backend client received cleaned arguments without hitl metadata
+	argsMap, ok := forwardedReq.Params.Arguments.(map[string]interface{})
+	if !ok {
+		t.Fatalf("expected args map, got %T", forwardedReq.Params.Arguments)
+	}
+	if _, exists := argsMap["hitl_token"]; exists {
+		t.Errorf("hitl_token should have been stripped from forwarded arguments")
+	}
+	if _, exists := argsMap["hitl_approved"]; exists {
+		t.Errorf("hitl_approved should have been stripped from forwarded arguments")
+	}
+	if argsMap["pull_number"] != 100 {
+		t.Errorf("expected pull_number 100, got %v", argsMap["pull_number"])
+	}
+
+	// Step 5: Replay attack with same consumed token -> MUST FAIL
+	res5, err := handler(context.Background(), req4)
+	if err != nil {
+		t.Fatalf("unexpected handler error: %v", err)
+	}
+	if !res5.IsError {
+		t.Fatalf("expected consumed token replay to be rejected")
+	}
+}
+
+func TestCreateToolHandler_HITL_DevOps_Deploy(t *testing.T) {
+	mockClient := &mockMCPClient{}
+	b := &Backend{
+		Name: "nova-devops-mcp",
+		Config: ServerConfig{
+			Prefix: "nova-devops-mcp__",
+		},
+		Client:    mockClient,
+		Semaphore: make(chan struct{}, 5),
+	}
+	mux := newTestMultiplexer(b)
+
+	handler := CreateToolHandler(b.Name, mux, "devops_manage_service", "prometheus_brobot")
+
+	// 1. Action = "status" is read-only -> NO HITL required, succeeds immediately
+	reqStatus := mcp.CallToolRequest{}
+	reqStatus.Params.Name = "nova-devops-mcp__devops_manage_service"
+	reqStatus.Params.Arguments = map[string]interface{}{
+		"target_type": "systemd",
+		"name":        "agent-vault",
+		"action":      "status",
+	}
+	resStatus, err := handler(context.Background(), reqStatus)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resStatus.IsError {
+		t.Errorf("expected status probe to succeed without HITL: %s", extractResultErrorMessage(resStatus))
+	}
+
+	// 2. Action = "restart" is a service mutation / deploy -> MUST BE BLOCKED BY HITL
+	reqRestart := mcp.CallToolRequest{}
+	reqRestart.Params.Name = "nova-devops-mcp__devops_manage_service"
+	reqRestart.Params.Arguments = map[string]interface{}{
+		"target_type": "systemd",
+		"name":        "agent-vault",
+		"action":      "restart",
+	}
+	resRestart, err := handler(context.Background(), reqRestart)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !resRestart.IsError {
+		t.Fatalf("expected autonomous restart to be blocked by HITL")
+	}
+	errText := extractResultErrorMessage(resRestart)
+	if !strings.Contains(errText, "DEPLOY_SERVICE") {
+		t.Errorf("expected DEPLOY_SERVICE in HITL error, got: %s", errText)
+	}
+
+	// Extract token
+	re := regexp.MustCompile(`hitl_token: "(hitl_[a-f0-9]+)"`)
+	matches := re.FindStringSubmatch(errText)
+	if len(matches) < 2 {
+		t.Fatalf("failed to extract token from restart error: %s", errText)
+	}
+	deployToken := matches[1]
+
+	// 3. Confirm with valid token + hitl_approved=true -> SUCCEEDS!
+	reqConfirm := mcp.CallToolRequest{}
+	reqConfirm.Params.Name = "nova-devops-mcp__devops_manage_service"
+	reqConfirm.Params.Arguments = map[string]interface{}{
+		"target_type":   "systemd",
+		"name":          "agent-vault",
+		"action":        "restart",
+		"hitl_token":    deployToken,
+		"hitl_approved": true,
+	}
+	resConfirm, err := handler(context.Background(), reqConfirm)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if resConfirm.IsError {
+		t.Fatalf("expected confirmed restart to succeed, got: %s", extractResultErrorMessage(resConfirm))
+	}
+
+	// 4. Token replay attempt -> FAILS
+	resReplay, err := handler(context.Background(), reqConfirm)
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if !resReplay.IsError {
+		t.Fatalf("expected deploy token replay to be rejected")
+	}
+}
+
 
 func TestCreateToolHandler_SecurityGuard_ProtectedBranch(t *testing.T) {
 	b := &Backend{

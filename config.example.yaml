@@ -80,7 +80,7 @@ servers:
         - "list_directory"
         - "create_directory"
 
-  # Example 3: Local stdio backend (GitHub toolset)
+  # Example 3: Local stdio backend (GitHub toolset with Role Matrix & Hard HITL Guard)
   github:
     transport: stdio
     command: npx
@@ -91,8 +91,29 @@ servers:
       GITHUB_PERSONAL_ACCESS_TOKEN: ${GITHUB_PAT}
     prefix: gh__
     allowed_agents:
-      - "developer_agent"
-      - "admin_agent"
+      - "builder_agent"
+      - "auditor_agent"
+      - "researcher_agent"
+    agent_tools_allowlist:
+      researcher_agent:
+        - "get_file_contents"
+        - "search_repositories"
+        - "search_code"
+        - "list_issues"
+        - "get_issue"
+        - "create_issue"
+      builder_agent:
+        - "get_file_contents"
+        - "create_branch"
+        - "create_or_update_file"
+        - "push_files"
+        - "create_pull_request"
+        - "get_pull_request"
+      auditor_agent:
+        - "get_file_contents"
+        - "create_pull_request_review"
+        - "merge_pull_request" # Intercepted by Hard HITL guard requiring explicit human authorization
+
 
   # Example 4: Remote HTTP / SSE backend (Documentation & Search service)
   remote-docs:

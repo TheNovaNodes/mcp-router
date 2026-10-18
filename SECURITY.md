@@ -22,9 +22,10 @@ TheNovaNodes Collective treats autonomous AI agent infrastructure security and o
   - `ReadHeaderTimeout: 5s`
   - `IdleTimeout: 120s`
 
-### 2. Autonomous Agent PR Merge Ban (HITL Two-Phase Commit)
-- AI agents are strictly prohibited from invoking `merge_pull_request` on any GitHub backend.
-- Any attempt by an agent to execute PR merges triggers an immediate `SECURITY_BLOCK` audit event and returns a policy violation error. All merges require explicit human review and authorization from **ЗавЛаб**.
+### 2. Hard Human-In-The-Loop (HITL) Security Barrier (PR Merge & Deploy)
+- **Autonomous PR Merge & Deploy Ban:** AI agents are strictly prohibited from autonomously merging Pull Requests (`merge_pull_request`) or mutating production daemons/containers (`devops_manage_service: restart/stop/start`).
+- **Two-Phase Commit Token Workflow:** Attempted operations trigger a `SECURITY_BLOCK` audit event, stage the action in-memory with a 15-minute TTL, and issue a cryptographic token (`hitl_<hex>`).
+- **Sovereign Authorization (Supreme Gate):** Execution is unlocked exclusively upon human confirmation from **ЗавЛаб** and supplying `hitl_token` with `hitl_approved: true`. Replay attacks are prohibited through single-use atomic consumption.
 
 ### 3. Hardened Multi-Parameter Protected Branch Guard
 - Direct branch mutations (`push_files`, `create_or_update_file`, `delete_file`, `create_branch`, `update_pull_request_branch`) targeting protected branches (`main`, `master`, `origin/main`, `refs/heads/master`, etc.) are intercepted at the gateway level.
