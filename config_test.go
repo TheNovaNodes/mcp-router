@@ -500,7 +500,6 @@ func TestCanonicalConfig_CleanEcosystemBackends(t *testing.T) {
 		"google-jules-novanodes",
 		"context7-node-1",
 		"google-stitch-node-1",
-		"grizzly-sms",
 		"manus-gateway",
 		"nova-devops-mcp",
 	}
@@ -586,9 +585,9 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		t.Errorf("expected prometheus_brobot to NOT have access to github-doctormes")
 	}
 
-	// 3. Kairos gets exactly 9 backends: 3 base + 4 office + github-novanodes + manus-gateway
-	if count := countAllowedBackends("kairos_brobot"); count != 9 {
-		t.Errorf("expected kairos_brobot to have access to 9 backends, got %d", count)
+	// 3. Kairos gets exactly 8 backends: 3 base + 3 office (dynadot, mailru, nextcloud-gateway; grizzly-sms decommissioned) + github-novanodes + manus-gateway
+	if count := countAllowedBackends("kairos_brobot"); count != 8 {
+		t.Errorf("expected kairos_brobot to have access to 8 backends, got %d", count)
 	}
 	if !isAllowed("manus-gateway", "kairos_brobot") {
 		t.Errorf("expected kairos_brobot to have access to manus-gateway")
@@ -596,7 +595,10 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 	if isAllowed("nova-devops-mcp", "kairos_brobot") {
 		t.Errorf("expected kairos_brobot to NOT have access to nova-devops-mcp")
 	}
-	officeBackends := []string{"dynadot", "mailru", "nextcloud-gateway", "grizzly-sms"}
+	if _, ok := cfg.Servers["grizzly-sms"]; ok {
+		t.Errorf("SECURITY INVARIANT VIOLATION: grizzly-sms backend must be decommissioned from config.yaml")
+	}
+	officeBackends := []string{"dynadot", "mailru", "nextcloud-gateway"}
 	for _, b := range officeBackends {
 		if !isAllowed(b, "kairos_brobot") {
 			t.Errorf("expected kairos_brobot to have access to office backend %s", b)

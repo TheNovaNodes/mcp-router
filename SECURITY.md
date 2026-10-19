@@ -39,7 +39,7 @@ TheNovaNodes Collective treats autonomous AI agent infrastructure security and o
 ### 5. Granular Agent Isolation & Access Control Lists (ACL)
 The router enforces strict cluster isolation:
 - **Cluster 1 (Base Stack):** Public to all collective agents (Search, Memory, Context7).
-- **Cluster 2 (Personal Office):** Strictly confined to `kairos_brobot` (Dynadot DNS, Mail.ru, Nextcloud, Grizzly SMS).
+- **Cluster 2 (Personal Office):** Strictly confined to `kairos_brobot` and Triad `conflict` (Dynadot DNS, Mail.ru, Nextcloud).
 - **Cluster 3 (R&D Control Plane):** Decommissioned (retired in favor of direct terminal operations).
 - **Cluster 4 (GitHub Contours):** Segregated between `TheNovaNodes` (Core agents + OpenClaw) and `DoctorMes` (Medical agents).
 - **Cluster 5 (Google Quarantine Sandbox):** Isolated to `Tyler_Durden_gobot` (Stitch, Jules).

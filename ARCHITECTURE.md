@@ -49,7 +49,6 @@ flowchart TD
             B_DYNA["dynadot (stdio)"]
             B_MAIL["mailru (stdio)"]
             B_NC_GW["nextcloud-gateway (stdio)"]
-            B_GRIZZLY["grizzly-sms (stdio)"]
         end
         subgraph C4["Cluster 4: GitHub Contours"]
             B_GH_NOVA["github-novanodes (stdio)"]

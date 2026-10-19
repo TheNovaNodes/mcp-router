@@ -55,9 +55,8 @@ graph TD
         B6["Mail.ru Server (stdio)"]
         B7["Google Jules AI Agents (stdio)"]
         B8["Context7 & Google Stitch (streamable_http)"]
-        B9["Grizzly SMS (stdio)"]
-        B10["Manus AI Cloud Swarm (stdio)"]
-        B11["Nova DevOps MCP (stdio)"]
+        B9["Manus AI Cloud Swarm (stdio)"]
+        B10["Nova DevOps MCP (stdio)"]
     end
 
     A1 & A2 & A3 -->|HTTP/SSE| AUTH
@@ -192,7 +191,6 @@ The production router currently multiplexes **12 canonical ecosystem services** 
 | **`github-doctormes`** | `gh-doctormes__` | `stdio` | Cluster 4: DoctorMes Contour (3 Agents) | `GITHUB_PERSONAL_ACCESS_TOKEN` |
 | **`dynadot`** | `dynadot__` | `stdio` | Cluster 2: Personal Office (`kairos_brobot`) | `DYNADOT_API_KEY` |
 | **`mailru`** | `mailru__` | `stdio` | Cluster 2: Personal Office (`kairos_brobot`) | `MAILRU_USERNAME`, `MAILRU_APP_PASS` |
-| **`grizzly-sms`** | `grizzly__` | `stdio` | Cluster 2: Personal Office (`kairos_brobot`) | `GRIZZLY_SMS_API_KEY`, `GRIZZLY_SMS_BASE_URL` |
 | **`google-jules-novanodes`** | `google-jules-novanodes__` | `stdio` | Cluster 5: Google Sandbox (`Tyler_Durden_gobot`) | `JULES_API_KEY_NOVANODES`, `PYTHONPATH` |
 | **`google-jules-doctormes`** | `google-jules-doctormes__` | `stdio` | Cluster 5: Google Sandbox (`Tyler_Durden_gobot`) | `JULES_API_KEY_DOCTORMES`, `PYTHONPATH` |
 | **`context7-node-1`** | `ctx7-node-1__` | `streamable_http` | Cluster 1: Base Stack (All Agents) | `CONTEXT7_TOKEN_1` |
