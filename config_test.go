@@ -578,12 +578,15 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		t.Errorf("expected prometheus_brobot to NOT have access to github-doctormes")
 	}
 
-	// 3. Kairos gets exactly 7 backends: 3 base + 3 office (dynadot, mailru, nextcloud-gateway) + github-novanodes
-	if count := countAllowedBackends("kairos_brobot"); count != 7 {
-		t.Errorf("expected kairos_brobot to have access to 7 backends, got %d", count)
+	// 3. Kairos gets exactly 8 backends: 3 base + 3 office (dynadot, mailru, nextcloud-gateway) + github-novanodes + nova-play2go-mcp
+	if count := countAllowedBackends("kairos_brobot"); count != 8 {
+		t.Errorf("expected kairos_brobot to have access to 8 backends, got %d", count)
 	}
 	if isAllowed("nova-devops-mcp", "kairos_brobot") {
 		t.Errorf("expected kairos_brobot to NOT have access to nova-devops-mcp")
+	}
+	if !isAllowed("nova-play2go-mcp", "kairos_brobot") {
+		t.Errorf("expected kairos_brobot (Researcher) to have access to nova-play2go-mcp")
 	}
 	if _, ok := cfg.Servers["grizzly-sms"]; ok {
 		t.Errorf("SECURITY INVARIANT VIOLATION: grizzly-sms backend must be decommissioned from config.yaml")
@@ -613,21 +616,38 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		t.Errorf("expected Caduceus_brobot to NOT have access to github-novanodes")
 	}
 
-	// - Dartanyan_brobot (Auditor) & Marla_Singer_gobot (Researcher): 4 backends (3 base + github-doctormes; NO nova-devops-mcp)
-	doctormesNonBuilders := []string{"Dartanyan_brobot", "Marla_Singer_gobot"}
-	for _, agent := range doctormesNonBuilders {
-		if count := countAllowedBackends(agent); count != 4 {
-			t.Errorf("expected %s to have access to 4 backends, got %d", agent, count)
-		}
-		if !isAllowed("github-doctormes", agent) {
-			t.Errorf("expected %s to have access to github-doctormes", agent)
-		}
-		if isAllowed("github-novanodes", agent) {
-			t.Errorf("expected %s to NOT have access to github-novanodes", agent)
-		}
-		if isAllowed("nova-devops-mcp", agent) {
-			t.Errorf("expected %s to NOT have access to nova-devops-mcp", agent)
-		}
+	// - Dartanyan_brobot (Auditor): 4 backends (3 base + github-doctormes; NO nova-devops-mcp, NO nova-play2go-mcp)
+	if count := countAllowedBackends("Dartanyan_brobot"); count != 4 {
+		t.Errorf("expected Dartanyan_brobot to have access to 4 backends, got %d", count)
+	}
+	if !isAllowed("github-doctormes", "Dartanyan_brobot") {
+		t.Errorf("expected Dartanyan_brobot to have access to github-doctormes")
+	}
+	if isAllowed("github-novanodes", "Dartanyan_brobot") {
+		t.Errorf("expected Dartanyan_brobot to NOT have access to github-novanodes")
+	}
+	if isAllowed("nova-devops-mcp", "Dartanyan_brobot") {
+		t.Errorf("expected Dartanyan_brobot to NOT have access to nova-devops-mcp")
+	}
+	if isAllowed("nova-play2go-mcp", "Dartanyan_brobot") {
+		t.Errorf("expected Dartanyan_brobot to NOT have access to nova-play2go-mcp")
+	}
+
+	// - Marla_Singer_gobot (Researcher): 5 backends (3 base + github-doctormes + nova-play2go-mcp; NO nova-devops-mcp)
+	if count := countAllowedBackends("Marla_Singer_gobot"); count != 5 {
+		t.Errorf("expected Marla_Singer_gobot to have access to 5 backends, got %d", count)
+	}
+	if !isAllowed("github-doctormes", "Marla_Singer_gobot") {
+		t.Errorf("expected Marla_Singer_gobot to have access to github-doctormes")
+	}
+	if isAllowed("github-novanodes", "Marla_Singer_gobot") {
+		t.Errorf("expected Marla_Singer_gobot to NOT have access to github-novanodes")
+	}
+	if isAllowed("nova-devops-mcp", "Marla_Singer_gobot") {
+		t.Errorf("expected Marla_Singer_gobot to NOT have access to nova-devops-mcp")
+	}
+	if !isAllowed("nova-play2go-mcp", "Marla_Singer_gobot") {
+		t.Errorf("expected Marla_Singer_gobot (Researcher) to have access to nova-play2go-mcp")
 	}
 
 	// 5. Tyler gets 4 backends: 3 base + github-novanodes (quarantine stitch, jules and manus decommissioned)
@@ -684,12 +704,15 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		t.Errorf("expected NovaNodes_brobot to NOT have access to nova-devops-mcp")
 	}
 
-	// - toomynamea_brobot is Researcher in Modelix: 4 backends (3 base + github-novanodes)
-	if count := countAllowedBackends("toomynamea_brobot"); count != 4 {
-		t.Errorf("expected toomynamea_brobot to have access to 4 backends, got %d", count)
+	// - toomynamea_brobot is Researcher in Modelix: 5 backends (3 base + github-novanodes + nova-play2go-mcp)
+	if count := countAllowedBackends("toomynamea_brobot"); count != 5 {
+		t.Errorf("expected toomynamea_brobot to have access to 5 backends, got %d", count)
 	}
 	if isAllowed("nova-devops-mcp", "toomynamea_brobot") {
 		t.Errorf("expected toomynamea_brobot to NOT have access to nova-devops-mcp")
+	}
+	if !isAllowed("nova-play2go-mcp", "toomynamea_brobot") {
+		t.Errorf("expected toomynamea_brobot (Researcher) to have access to nova-play2go-mcp")
 	}
 	if isAllowed("mailru", "toomynamea_brobot") {
 		t.Errorf("expected toomynamea_brobot to NOT have access to mailru")
@@ -774,6 +797,34 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		}
 		if isAllowed("nextcloud-gateway", agent) {
 			t.Errorf("SECURITY VIOLATION: non-conflict agent %s must NOT have access to nextcloud-gateway", agent)
+		}
+	}
+
+	// 10. Swarm Role Invariant: ONLY the 5 Researchers have access to nova-play2go-mcp
+	swarmResearchers := []string{
+		"toomynamea_brobot",
+		"Marla_Singer_gobot",
+		"kairos_brobot",
+		"MataHari_gobot",
+		"DonatelloResearch_bot",
+	}
+	for _, r := range swarmResearchers {
+		if !isAllowed("nova-play2go-mcp", r) {
+			t.Errorf("expected swarm researcher %s to have access to nova-play2go-mcp", r)
+		}
+	}
+
+	swarmNonResearchers := []string{
+		// 5 Builders
+		"prometheus_brobot", "MichelangeloBuilder_bot", "BaruhSpinoza_gobot", "trickster_gobot", "Caduceus_brobot",
+		// 5 Auditors
+		"Tyler_Durden_gobot", "Dartanyan_brobot", "NovaNodes_brobot", "VanHelsing_gobot", "LeonardoAuditor_bot",
+		// OpenClaw
+		"bahus", "main",
+	}
+	for _, nr := range swarmNonResearchers {
+		if isAllowed("nova-play2go-mcp", nr) {
+			t.Errorf("SECURITY INVARIANT VIOLATION: non-researcher %s must NOT have access to nova-play2go-mcp", nr)
 		}
 	}
 }
