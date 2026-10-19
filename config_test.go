@@ -827,6 +827,39 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 			t.Errorf("SECURITY INVARIANT VIOLATION: non-researcher %s must NOT have access to nova-play2go-mcp", nr)
 		}
 	}
+
+	// 11. Clean Prompt Invariant: Deprecated and high-token-tax tools must NOT be present in active allowlists
+	deprecatedTools := map[string][]string{
+		"dynadot":          {"get_tld_price"},
+		"nova-play2go-mcp": {"play2go_vm_vnc"},
+		"github-novanodes": {"search_users", "create_or_update_file"},
+		"github-doctormes": {"search_users", "create_or_update_file"},
+	}
+
+	for backendName, bannedList := range deprecatedTools {
+		server, ok := cfg.Servers[backendName]
+		if !ok {
+			continue
+		}
+		// Check tools_allowlist
+		for _, tool := range server.ToolsAllowlist {
+			for _, banned := range bannedList {
+				if tool == banned {
+					t.Errorf("SECURITY/HYGIENE VIOLATION: deprecated tool '%s' still present in %s.tools_allowlist", banned, backendName)
+				}
+			}
+		}
+		// Check agent_tools_allowlist across all agents
+		for agent, tools := range server.AgentToolsAllowlist {
+			for _, tool := range tools {
+				for _, banned := range bannedList {
+					if tool == banned {
+						t.Errorf("SECURITY/HYGIENE VIOLATION: deprecated tool '%s' still present in %s.agent_tools_allowlist for agent '%s'", banned, backendName, agent)
+					}
+				}
+			}
+		}
+	}
 }
 
 func TestServerConfig_GetCallTimeout(t *testing.T) {
