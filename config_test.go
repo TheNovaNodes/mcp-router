@@ -606,9 +606,27 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		}
 	}
 
-	// 4. Doctormes contour: exactly 5 backends (3 base + github-doctormes + manus-gateway)
-	doctormesAgents := []string{"Caduceus_brobot", "Dartanyan_brobot", "Marla_Singer_gobot"}
-	for _, agent := range doctormesAgents {
+	// 4. Doctormes contour:
+	// - Caduceus_brobot is Builder: gets 6 backends (3 base + github-doctormes + manus-gateway + nova-devops-mcp)
+	if count := countAllowedBackends("Caduceus_brobot"); count != 6 {
+		t.Errorf("expected Caduceus_brobot to have access to 6 backends, got %d", count)
+	}
+	if !isAllowed("nova-devops-mcp", "Caduceus_brobot") {
+		t.Errorf("expected Caduceus_brobot (Builder) to have access to nova-devops-mcp")
+	}
+	if !isAllowed("manus-gateway", "Caduceus_brobot") {
+		t.Errorf("expected Caduceus_brobot to have access to manus-gateway")
+	}
+	if !isAllowed("github-doctormes", "Caduceus_brobot") {
+		t.Errorf("expected Caduceus_brobot to have access to github-doctormes")
+	}
+	if isAllowed("github-novanodes", "Caduceus_brobot") {
+		t.Errorf("expected Caduceus_brobot to NOT have access to github-novanodes")
+	}
+
+	// - Dartanyan_brobot (Auditor) & Marla_Singer_gobot (Researcher): 5 backends (NO nova-devops-mcp)
+	doctormesNonBuilders := []string{"Dartanyan_brobot", "Marla_Singer_gobot"}
+	for _, agent := range doctormesNonBuilders {
 		if count := countAllowedBackends(agent); count != 5 {
 			t.Errorf("expected %s to have access to 5 backends, got %d", agent, count)
 		}
@@ -646,9 +664,24 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		}
 	}
 
-	// 6. Orchestration agents (trickster_gobot, toomynamea_brobot, NovaNodes_brobot): exactly 5 backends (3 base + github-novanodes + manus-gateway)
-	orchestrationAgents := []string{"trickster_gobot", "toomynamea_brobot", "NovaNodes_brobot"}
-	for _, agent := range orchestrationAgents {
+	// 6. Orchestration contour / Frankfurt HQ:
+	// - trickster_gobot is Builder: gets 6 backends (3 base + github-novanodes + manus-gateway + nova-devops-mcp)
+	if count := countAllowedBackends("trickster_gobot"); count != 6 {
+		t.Errorf("expected trickster_gobot to have access to 6 backends, got %d", count)
+	}
+	if !isAllowed("nova-devops-mcp", "trickster_gobot") {
+		t.Errorf("expected trickster_gobot (Builder) to have access to nova-devops-mcp")
+	}
+	if !isAllowed("manus-gateway", "trickster_gobot") {
+		t.Errorf("expected trickster_gobot to have access to manus-gateway")
+	}
+	if !isAllowed("github-novanodes", "trickster_gobot") {
+		t.Errorf("expected trickster_gobot to have access to github-novanodes")
+	}
+
+	// - toomynamea_brobot (Researcher) & NovaNodes_brobot (Auditor): 5 backends (NO nova-devops-mcp)
+	orchestrationNonBuilders := []string{"toomynamea_brobot", "NovaNodes_brobot"}
+	for _, agent := range orchestrationNonBuilders {
 		if count := countAllowedBackends(agent); count != 5 {
 			t.Errorf("expected %s to have access to 5 backends, got %d", agent, count)
 		}
@@ -677,6 +710,32 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		}
 		if isAllowed("nova-devops-mcp", agent) {
 			t.Errorf("expected %s to NOT have access to nova-devops-mcp", agent)
+		}
+	}
+
+	// 8. Swarm Role Invariant: ONLY the 5 Builders have access to nova-devops-mcp
+	swarmBuilders := []string{
+		"prometheus_brobot",
+		"MichelangeloBuilder_bot",
+		"BaruhSpinoza_gobot",
+		"trickster_gobot",
+		"Caduceus_brobot",
+	}
+	for _, b := range swarmBuilders {
+		if !isAllowed("nova-devops-mcp", b) {
+			t.Errorf("expected swarm builder %s to have access to nova-devops-mcp", b)
+		}
+	}
+
+	swarmNonBuilders := []string{
+		// 5 Researchers
+		"toomynamea_brobot", "Marla_Singer_gobot", "kairos_brobot", "MataHari_gobot", "DonatelloResearch_bot",
+		// 5 Auditors
+		"Tyler_Durden_gobot", "Dartanyan_brobot", "NovaNodes_brobot", "VanHelsing_gobot", "LeonardoAuditor_bot",
+	}
+	for _, nb := range swarmNonBuilders {
+		if isAllowed("nova-devops-mcp", nb) {
+			t.Errorf("SECURITY INVARIANT VIOLATION: non-builder %s must NOT have access to nova-devops-mcp", nb)
 		}
 	}
 }

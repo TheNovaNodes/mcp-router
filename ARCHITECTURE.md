@@ -33,7 +33,8 @@ flowchart TD
     subgraph Guards["Execution Pipeline & Policy Guards"]
         SEM["Bounded Semaphore<br/>(max_concurrent slots)"]
         OVERLOAD["Overload Guard<br/>(15s Queue Timeout)"]
-        BRANCH_GUARD["Security Policy Guard<br/>(PR Merge Ban & Protected Branch Guard)"]
+        BRANCH_GUARD["Security Policy Guard<br/>(Protected Branch Guard & PR Merge Ban)"]
+        HITL_GUARD["Hard HITL Security Barrier<br/>(PR Merge & Service Deploy Two-Phase Commit)"]
         TIMEOUT["Execution Timeout Guard<br/>(Per-Backend Timeout)"]
         AUDIT["Zero-Noise Audit Logger<br/>(/var/log/mcp-router/audit.jsonl)"]
     end
@@ -76,7 +77,8 @@ flowchart TD
     DYNAMIC --> SEM
     SEM --> OVERLOAD
     OVERLOAD --> BRANCH_GUARD
-    BRANCH_GUARD --> TIMEOUT
+    BRANCH_GUARD --> HITL_GUARD
+    HITL_GUARD --> TIMEOUT
     TIMEOUT --> AUDIT
     AUDIT --> C1 & C2 & C4 & C5 & C6 & C7
 ```
@@ -131,3 +133,9 @@ flowchart TD
   - `TOOL_ERROR`: Subprocess crashes, execution timeouts, backend deadlocks.
 - Sensitive credentials (PATs, JWTs, AWS keys, passwords) are automatically redacted.
 - Seamlessly reopens the log file on `SIGHUP` for compatibility with system log rotation (`logrotate`).
+
+### 7. Hard Human-In-The-Loop (HITL) Security Barrier (`hitl.go`, `router.go`)
+- **Two-Phase Commit Token Workflow:** Autonomous PR merges (`merge_pull_request`) and production service mutations/deployments (`devops_manage_service` with action `restart`/`stop`/`start`) are strictly intercepted at the gateway level.
+- **Staging & Cryptographic Token Generation:** Unapproved attempts stage the operation in a bounded in-memory store (`HITLManager`), generate a single-use token (`hitl_<hex>`) with a 15-minute TTL, log a `SECURITY_BLOCK` audit event, and return instructions requiring explicit operator (ZaVLab) authorization.
+- **Atomic Execution & Replay Defense:** Validated calls providing `hitl_token` and `hitl_approved: true` atomically consume and invalidate the token, strip internal HITL parameters before backend dispatch, and log a `STATE_CHANGE` audit event. Replay attempts are instantly blocked.
+
