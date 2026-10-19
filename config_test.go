@@ -860,6 +860,44 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 			}
 		}
 	}
+
+	// 12. GitHub Account Sovereignty Invariant:
+	// github-doctormes MUST strictly contain only the 3 agents of the Doctormes contour (Caduceus, Dartanyan, Marla Singer).
+	// Poland and Netherlands triads MUST have access ONLY to github-novanodes and NEVER to github-doctormes.
+	doctormesTriad := []string{"Caduceus_brobot", "Dartanyan_brobot", "Marla_Singer_gobot"}
+	nonDoctormesSwarm := []string{
+		// Poland Triad
+		"MataHari_gobot", "BaruhSpinoza_gobot", "VanHelsing_gobot",
+		// Netherlands Triad
+		"DonatelloResearch_bot", "LeonardoAuditor_bot", "MichelangeloBuilder_bot",
+		// Frankfurt Swarm
+		"toomynamea_brobot", "prometheus_brobot", "NovaNodes_brobot", "trickster_gobot", "kairos_brobot", "Tyler_Durden_gobot",
+		// OpenClaw
+		"bahus", "main",
+	}
+
+	for _, agent := range doctormesTriad {
+		if !isAllowed("github-doctormes", agent) {
+			t.Errorf("ACCOUNT SOVEREIGNTY VIOLATION: doctormes triad agent %s must have access to github-doctormes", agent)
+		}
+	}
+
+	for _, agent := range nonDoctormesSwarm {
+		if isAllowed("github-doctormes", agent) {
+			t.Errorf("ACCOUNT SOVEREIGNTY VIOLATION: agent %s must NOT have access to github-doctormes", agent)
+		}
+	}
+
+	// Poland and Netherlands MUST have access to github-novanodes
+	crossTriads := []string{
+		"MataHari_gobot", "BaruhSpinoza_gobot", "VanHelsing_gobot",
+		"DonatelloResearch_bot", "LeonardoAuditor_bot", "MichelangeloBuilder_bot",
+	}
+	for _, agent := range crossTriads {
+		if !isAllowed("github-novanodes", agent) {
+			t.Errorf("ACCOUNT SOVEREIGNTY VIOLATION: agent %s must have access to github-novanodes", agent)
+		}
+	}
 }
 
 func TestServerConfig_GetCallTimeout(t *testing.T) {
