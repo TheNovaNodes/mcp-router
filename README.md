@@ -53,11 +53,8 @@ graph TD
         B4["GitHub Doctormes & NovaNodes (stdio)"]
         B5["Dynadot DNS Management (stdio)"]
         B6["Mail.ru Server (stdio)"]
-        B7["Google Jules AI Agents (stdio)"]
-        B8["Context7 & Google Stitch (streamable_http)"]
-        B9["Grizzly SMS (stdio)"]
-        B10["Manus AI Cloud Swarm (stdio)"]
-        B11["Nova DevOps MCP (stdio)"]
+        B7["Context7 (streamable_http)"]
+        B8["Nova DevOps MCP (stdio)"]
     end
 
     A1 & A2 & A3 -->|HTTP/SSE| AUTH
@@ -192,11 +189,7 @@ The production router currently multiplexes **12 canonical ecosystem services** 
 | **`github-doctormes`** | `gh-doctormes__` | `stdio` | Cluster 4: DoctorMes Contour (3 Agents) | `GITHUB_PERSONAL_ACCESS_TOKEN` |
 | **`dynadot`** | `dynadot__` | `stdio` | Cluster 2: Personal Office (`kairos_brobot`) | `DYNADOT_API_KEY` |
 | **`mailru`** | `mailru__` | `stdio` | Cluster 2: Personal Office (`kairos_brobot`) | `MAILRU_USERNAME`, `MAILRU_APP_PASS` |
-| **`grizzly-sms`** | `grizzly__` | `stdio` | Cluster 2: Personal Office (`kairos_brobot`) | `GRIZZLY_SMS_API_KEY`, `GRIZZLY_SMS_BASE_URL` |
-| **`google-jules-novanodes`** | `google-jules-novanodes__` | `stdio` | Cluster 5: Google Sandbox (`Tyler_Durden_gobot`) | `JULES_API_KEY_NOVANODES`, `PYTHONPATH` |
-| **`google-jules-doctormes`** | `google-jules-doctormes__` | `stdio` | Cluster 5: Google Sandbox (`Tyler_Durden_gobot`) | `JULES_API_KEY_DOCTORMES`, `PYTHONPATH` |
 | **`context7-node-1`** | `ctx7-node-1__` | `streamable_http` | Cluster 1: Base Stack (All Agents) | `CONTEXT7_TOKEN_1` |
-| **`google-stitch-node-1`** | `stitch-node-1__` | `streamable_http` | Cluster 5: Google Sandbox (`Tyler_Durden_gobot`) | `GOOGLE_STITCH_TOKEN_1` |
 
 
 ---
@@ -316,9 +309,6 @@ Example response:
     "dynadot": "READY",
     "github-doctormes": "READY",
     "github-novanodes": "READY",
-    "google-jules-doctormes": "READY",
-    "google-jules-novanodes": "READY",
-    "google-stitch-node-1": "READY",
     "mailru": "READY",
     "nextcloud-gateway": "READY",
     "nova-anythingllm-mcp": "READY",
@@ -381,13 +371,11 @@ go tool cover -func=coverage.out
 
 ## 🔄 Ecosystem Backends Operational Status
 
-All **14 canonical ecosystem services** are fully restored, production-hardened, and operating with active healthy status:
+All active canonical ecosystem services are fully restored, production-hardened, and operating with active healthy status:
 
-- ✅ **Google Stitch Nodes (`google-stitch-*`)**: **RESTORED & ACTIVE**. Operates via native `streamable_http` POST transport (`https://stitch.googleapis.com/mcp`) providing Google ecosystem tools for `Tyler_Durden_gobot`.
-- ✅ **Google Jules AI Agents (`google-jules-*`)**: **RESTORED & ACTIVE**. Operates via Python virtual environment with explicit `PYTHONPATH` isolation, providing asynchronous repository task delegation tools (`list_jules_sources`, `delegate_task_to_jules`, `check_jules_status`).
 - ✅ **Context7 Documentation Gateways (`context7-*`)**: **RESTORED & ACTIVE**. Operates via native `streamable_http` POST transport with `Accept: application/json, text/event-stream`, providing live documentation queries (`resolve-library-id`, `query-docs`).
 - ✅ **Mail.ru Server (`mailru`)**: **RESTORED & ACTIVE**. High-performance Go implementation providing IMAP/SMTP/WebDAV MCP endpoints.
-- ✅ **10 Other Backends**: Fully operational across Base Stack, Personal Office, R&D Control, and GitHub Contours. All 14 backends report `READY` in `/health`.
+- ✅ **Core Backends**: Fully operational across Base Stack, Personal Office, GitHub Contours, and DevOps Control Plane under Hard HITL Guard. All active backends report `READY` in `/health`.
 
 ---
 
