@@ -54,14 +54,6 @@ flowchart TD
             B_GH_NOVA["github-novanodes (stdio)"]
             B_GH_DOC["github-doctormes (stdio)"]
         end
-        subgraph C5["Cluster 5: Google Sandbox"]
-            B_STITCH["google-stitch-node-1 (streamable_http)"]
-            B_JULES_NOVA["google-jules-novanodes (stdio)"]
-            B_JULES_DOC["google-jules-doctormes (stdio)"]
-        end
-        subgraph C6["Cluster 6: Cloud Swarm"]
-            B_MANUS["manus-gateway (stdio)"]
-        end
         subgraph C7["Cluster 7: DevOps & Infrastructure Control"]
             B_DEVOPS["nova-devops-mcp (stdio)"]
         end

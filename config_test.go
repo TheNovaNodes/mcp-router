@@ -496,11 +496,7 @@ func TestCanonicalConfig_CleanEcosystemBackends(t *testing.T) {
 		"github-doctormes",
 		"github-novanodes",
 		"dynadot",
-		"google-jules-doctormes",
-		"google-jules-novanodes",
 		"context7-node-1",
-		"google-stitch-node-1",
-		"manus-gateway",
 		"nova-devops-mcp",
 	}
 	if _, ok := cfg.Servers["nova-play2go-mcp"]; ok {
@@ -564,8 +560,8 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		}
 	}
 
-	// 2. Prometheus gets base + github-novanodes + manus-gateway + nova-devops-mcp (+ nova-play2go-mcp if present)
-	expectedPrometheusCount := 6
+	// 2. Prometheus gets base + github-novanodes + nova-devops-mcp (+ nova-play2go-mcp if present)
+	expectedPrometheusCount := 5
 	if _, ok := cfg.Servers["nova-play2go-mcp"]; ok && isAllowed("nova-play2go-mcp", "prometheus_brobot") {
 		expectedPrometheusCount++
 	}
@@ -578,19 +574,13 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 	if !isAllowed("github-novanodes", "prometheus_brobot") {
 		t.Errorf("expected prometheus_brobot to have access to github-novanodes")
 	}
-	if !isAllowed("manus-gateway", "prometheus_brobot") {
-		t.Errorf("expected prometheus_brobot to have access to manus-gateway")
-	}
 	if isAllowed("github-doctormes", "prometheus_brobot") {
 		t.Errorf("expected prometheus_brobot to NOT have access to github-doctormes")
 	}
 
-	// 3. Kairos gets exactly 8 backends: 3 base + 3 office (dynadot, mailru, nextcloud-gateway; grizzly-sms decommissioned) + github-novanodes + manus-gateway
-	if count := countAllowedBackends("kairos_brobot"); count != 8 {
-		t.Errorf("expected kairos_brobot to have access to 8 backends, got %d", count)
-	}
-	if !isAllowed("manus-gateway", "kairos_brobot") {
-		t.Errorf("expected kairos_brobot to have access to manus-gateway")
+	// 3. Kairos gets exactly 7 backends: 3 base + 3 office (dynadot, mailru, nextcloud-gateway) + github-novanodes
+	if count := countAllowedBackends("kairos_brobot"); count != 7 {
+		t.Errorf("expected kairos_brobot to have access to 7 backends, got %d", count)
 	}
 	if isAllowed("nova-devops-mcp", "kairos_brobot") {
 		t.Errorf("expected kairos_brobot to NOT have access to nova-devops-mcp")
@@ -609,15 +599,12 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 	}
 
 	// 4. Doctormes contour:
-	// - Caduceus_brobot is Builder: gets 6 backends (3 base + github-doctormes + manus-gateway + nova-devops-mcp)
-	if count := countAllowedBackends("Caduceus_brobot"); count != 6 {
-		t.Errorf("expected Caduceus_brobot to have access to 6 backends, got %d", count)
+	// - Caduceus_brobot is Builder: gets 5 backends (3 base + github-doctormes + nova-devops-mcp)
+	if count := countAllowedBackends("Caduceus_brobot"); count != 5 {
+		t.Errorf("expected Caduceus_brobot to have access to 5 backends, got %d", count)
 	}
 	if !isAllowed("nova-devops-mcp", "Caduceus_brobot") {
 		t.Errorf("expected Caduceus_brobot (Builder) to have access to nova-devops-mcp")
-	}
-	if !isAllowed("manus-gateway", "Caduceus_brobot") {
-		t.Errorf("expected Caduceus_brobot to have access to manus-gateway")
 	}
 	if !isAllowed("github-doctormes", "Caduceus_brobot") {
 		t.Errorf("expected Caduceus_brobot to have access to github-doctormes")
@@ -626,14 +613,11 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		t.Errorf("expected Caduceus_brobot to NOT have access to github-novanodes")
 	}
 
-	// - Dartanyan_brobot (Auditor) & Marla_Singer_gobot (Researcher): 5 backends (NO nova-devops-mcp)
+	// - Dartanyan_brobot (Auditor) & Marla_Singer_gobot (Researcher): 4 backends (3 base + github-doctormes; NO nova-devops-mcp)
 	doctormesNonBuilders := []string{"Dartanyan_brobot", "Marla_Singer_gobot"}
 	for _, agent := range doctormesNonBuilders {
-		if count := countAllowedBackends(agent); count != 5 {
-			t.Errorf("expected %s to have access to 5 backends, got %d", agent, count)
-		}
-		if !isAllowed("manus-gateway", agent) {
-			t.Errorf("expected %s to have access to manus-gateway", agent)
+		if count := countAllowedBackends(agent); count != 4 {
+			t.Errorf("expected %s to have access to 4 backends, got %d", agent, count)
 		}
 		if !isAllowed("github-doctormes", agent) {
 			t.Errorf("expected %s to have access to github-doctormes", agent)
@@ -646,36 +630,32 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		}
 	}
 
-	// 5. Tyler gets 8 backends: 3 base + github-novanodes + 3 quarantine (stitch, jules-novanodes, jules-doctormes) + manus-gateway
-	if count := countAllowedBackends("Tyler_Durden_gobot"); count != 8 {
-		t.Errorf("expected Tyler_Durden_gobot to have access to 8 backends, got %d", count)
-	}
-	if !isAllowed("manus-gateway", "Tyler_Durden_gobot") {
-		t.Errorf("expected Tyler_Durden_gobot to have access to manus-gateway")
+	// 5. Tyler gets 4 backends: 3 base + github-novanodes (quarantine stitch, jules and manus decommissioned)
+	if count := countAllowedBackends("Tyler_Durden_gobot"); count != 4 {
+		t.Errorf("expected Tyler_Durden_gobot to have access to 4 backends, got %d", count)
 	}
 	if isAllowed("nova-devops-mcp", "Tyler_Durden_gobot") {
 		t.Errorf("expected Tyler_Durden_gobot to NOT have access to nova-devops-mcp")
 	}
-	quarantineBackends := []string{"google-stitch-node-1", "google-jules-novanodes", "google-jules-doctormes"}
-	for _, b := range quarantineBackends {
-		if !isAllowed(b, "Tyler_Durden_gobot") {
-			t.Errorf("expected Tyler_Durden_gobot to have access to quarantine backend %s", b)
-		}
-		if isAllowed(b, "prometheus_brobot") {
-			t.Errorf("expected prometheus_brobot to NOT have access to quarantine backend %s", b)
+	decommissionedBackends := []string{
+		"google-stitch-node-1",
+		"google-jules-novanodes",
+		"google-jules-doctormes",
+		"manus-gateway",
+	}
+	for _, b := range decommissionedBackends {
+		if _, ok := cfg.Servers[b]; ok {
+			t.Errorf("SECURITY INVARIANT VIOLATION: backend %s must be decommissioned from config.yaml", b)
 		}
 	}
 
 	// 6. Orchestration contour / Frankfurt HQ (Triad conflict):
-	// - trickster_gobot is Builder: gets 8 backends (3 base + github-novanodes + manus-gateway + nova-devops-mcp + mailru + nextcloud-gateway)
-	if count := countAllowedBackends("trickster_gobot"); count != 8 {
-		t.Errorf("expected trickster_gobot to have access to 8 backends, got %d", count)
+	// - trickster_gobot is Builder: gets 7 backends (3 base + github-novanodes + nova-devops-mcp + mailru + nextcloud-gateway)
+	if count := countAllowedBackends("trickster_gobot"); count != 7 {
+		t.Errorf("expected trickster_gobot to have access to 7 backends, got %d", count)
 	}
 	if !isAllowed("nova-devops-mcp", "trickster_gobot") {
 		t.Errorf("expected trickster_gobot (Builder) to have access to nova-devops-mcp")
-	}
-	if !isAllowed("manus-gateway", "trickster_gobot") {
-		t.Errorf("expected trickster_gobot to have access to manus-gateway")
 	}
 	if !isAllowed("github-novanodes", "trickster_gobot") {
 		t.Errorf("expected trickster_gobot to have access to github-novanodes")
@@ -687,12 +667,9 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		t.Errorf("expected trickster_gobot to have access to nextcloud-gateway")
 	}
 
-	// - NovaNodes_brobot is Auditor in Triad conflict: gets 7 backends (3 base + github-novanodes + manus-gateway + mailru + nextcloud-gateway)
-	if count := countAllowedBackends("NovaNodes_brobot"); count != 7 {
-		t.Errorf("expected NovaNodes_brobot to have access to 7 backends, got %d", count)
-	}
-	if !isAllowed("manus-gateway", "NovaNodes_brobot") {
-		t.Errorf("expected NovaNodes_brobot to have access to manus-gateway")
+	// - NovaNodes_brobot is Auditor in Triad conflict: gets 6 backends (3 base + github-novanodes + mailru + nextcloud-gateway)
+	if count := countAllowedBackends("NovaNodes_brobot"); count != 6 {
+		t.Errorf("expected NovaNodes_brobot to have access to 6 backends, got %d", count)
 	}
 	if !isAllowed("github-novanodes", "NovaNodes_brobot") {
 		t.Errorf("expected NovaNodes_brobot to have access to github-novanodes")
@@ -707,12 +684,9 @@ func TestCanonicalConfig_AgentACLMatrix(t *testing.T) {
 		t.Errorf("expected NovaNodes_brobot to NOT have access to nova-devops-mcp")
 	}
 
-	// - toomynamea_brobot is Researcher in Modelix: 5 backends (3 base + github-novanodes + manus-gateway)
-	if count := countAllowedBackends("toomynamea_brobot"); count != 5 {
-		t.Errorf("expected toomynamea_brobot to have access to 5 backends, got %d", count)
-	}
-	if !isAllowed("manus-gateway", "toomynamea_brobot") {
-		t.Errorf("expected toomynamea_brobot to have access to manus-gateway")
+	// - toomynamea_brobot is Researcher in Modelix: 4 backends (3 base + github-novanodes)
+	if count := countAllowedBackends("toomynamea_brobot"); count != 4 {
+		t.Errorf("expected toomynamea_brobot to have access to 4 backends, got %d", count)
 	}
 	if isAllowed("nova-devops-mcp", "toomynamea_brobot") {
 		t.Errorf("expected toomynamea_brobot to NOT have access to nova-devops-mcp")
